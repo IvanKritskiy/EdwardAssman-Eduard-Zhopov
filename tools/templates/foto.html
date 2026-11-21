@@ -19,10 +19,20 @@
     </div>
   </section>
   <section>
-    <h2 class="sec-title">Полная опись</h2>
+    <h2 class="sec-title">Все фотодокументы</h2>
     {% for year, posts in by_year.items() %}
     <details class="inventory"{% if loop.first %} open{% endif %}>
       <summary>{{ year }} год · {{ posts|length }} ед. хр.</summary>
+      {% if have_photos %}
+      <ul class="contact-sheet">
+        {% for p in posts %}{% set ph = arch.photos(p) %}{% set t = arch.thumb_url(ph[0].src, root) if ph else None %}
+        <li><a href="{{ arch.post_href(p.id, root) }}" title="{{ first_sentence(p.text, 160) if p.text else 'Без подписи' }}">
+          {% if t %}<img src="{{ t }}" alt="" loading="lazy" decoding="async">{% else %}<span class="ph-missing"><span>нет</span></span>{% endif %}
+          <span class="cs-meta">№ {{ p.id }}{% if ph|length > 1 %} · {{ ph|length }} фото{% endif %}</span>
+        </a></li>
+        {% endfor %}
+      </ul>
+      {% else %}
       <table>
         <thead><tr><th>№</th><th>Дата</th><th>Фото</th><th>Подпись</th></tr></thead>
         <tbody>
@@ -31,6 +41,7 @@
         {% endfor %}
         </tbody>
       </table>
+      {% endif %}
     </details>
     {% endfor %}
   </section>

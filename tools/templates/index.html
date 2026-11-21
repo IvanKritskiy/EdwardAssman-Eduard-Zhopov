@@ -13,8 +13,13 @@
     </figure>
   </div>
   <div class="hero-portrait" aria-hidden="true">
+    {% if portrait %}
+    <div class="oval has-img"><img src="{{ root }}{{ portrait }}" alt="Портрет Эдуарда Борисовича Жопова" width="640" height="640"></div>
+    <p class="portrait-cap">Э. Б. Жопов. Портрет. Автор и год не установлены</p>
+    {% else %}
     <div class="oval"><span>Э.&thinsp;Б.&thinsp;Ж.</span></div>
     <p class="portrait-cap">Портрет не сохранился. Расставаясь с жёнами, Мэтр сжигал фотографии</p>
+    {% endif %}
     <span class="stamp">Хранить вечно</span>
   </div>
 </section>
@@ -36,7 +41,7 @@
     <a class="card" href="sochineniya.html"><span class="card-no">II</span><h3>Собрание сочинений</h3><p>Рассказы, найденные в архивах, по томам и годам. Библиография романов. Приложение: проза Ягодичкина.</p></a>
     <a class="card" href="stihi.html"><span class="card-no">III</span><h3>Стихотворения и песни</h3><p>Стихи Мэтра, которые он сам считал неудачными, посвящения ему и песни его круга.</p></a>
     <a class="card" href="svidetelstva.html"><span class="card-no">IV</span><h3>Свидетельства современников</h3><p>Булгаков, Троцкий, Камю, Беккет, Хемингуэй, Довлатов и ещё четыре десятка человек, знавших Мэтра.</p></a>
-    <a class="card" href="lyudi.html"><span class="card-no">V</span><h3>Окружение</h3><p>Музы, жёны, друзья, издатель, оппонент Ягодичкин и критик Алла Красивая.</p></a>
+    <a class="card" href="lyudi.html"><span class="card-no">V</span><h3>Окружение</h3><p>Музы, жёны, друзья, издатель, оппонент Ягодичкин. Отдельно — записки Женсонессы Рысь из её собственного канала.</p></a>
     <a class="card" href="zavety.html"><span class="card-no">VI</span><h3>Заветы</h3><p>Распорядок дня 1967 года, правила жизни, советы начинающим и крылатые слова.</p></a>
     <a class="card" href="premiya.html"><span class="card-no">VII</span><h3>Премия имени Жопова</h3><p>«Жоповка» вручается ежедневно, в основном в Монте-Карло. Хроника вручений.</p></a>
     <a class="card" href="foto.html"><span class="card-no">VIII</span><h3>Фотоархив</h3><p>Опись фотодокументов: редкие кадры, рисунки и карикатуры.</p></a>
