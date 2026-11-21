@@ -5,7 +5,7 @@
     python3 tools/build_site.py        # data/posts.json + content/ -> docs/
 
 Фотографии берутся из папки экспорта («Эдуард Жопов/photos/...»), если она есть.
-Требуется jinja2.
+Требуются jinja2 и Pillow.
 """
 from __future__ import annotations
 
@@ -21,6 +21,7 @@ from datetime import datetime
 from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
+from PIL import Image
 
 ROOT = Path(__file__).resolve().parent.parent
 TOOLS = Path(__file__).resolve().parent
@@ -187,22 +188,61 @@ class Archive:
         return re.sub(rf'href="https?://t\.me/{CHANNEL}/(\d+)[^"]*"', tme, html)
 
     # -- media
-    def media_url(self, rel: str | None, root: str) -> str | None:
+    # Полноразмерные снимки копируются в media/photos/, превью сборщик делает сам
+    # в media/thumbs/ (файлы *_thumb.jpg из экспорта Telegram не нужны).
+    THUMB_SIZE = 520
+
+    def media_url(self, rel: str | None, root: str, kind: str = "full") -> str | None:
         if not rel:
             return None
         src = self.export_dir / rel
         if not src.is_file():
             return None
-        if rel not in self.copied_media:
-            dst = self.out / "media" / rel
+        name = Path(rel).name
+        sub = "photos" if kind == "full" else "thumbs"
+        key = f"{sub}/{name}"
+        if key not in self.copied_media:
+            dst = self.out / "media" / sub / name
             dst.parent.mkdir(parents=True, exist_ok=True)
-            if not dst.exists() or dst.stat().st_size != src.stat().st_size:
-                shutil.copy2(src, dst)
-            self.copied_media.add(rel)
-        return root + "media/" + rel
+            if kind == "full":
+                if not dst.exists() or dst.stat().st_size != src.stat().st_size:
+                    shutil.copy2(src, dst)
+            elif not dst.exists() or dst.stat().st_mtime < src.stat().st_mtime:
+                with Image.open(src) as im:
+                    im = im.convert("RGB")
+                    im.thumbnail((self.THUMB_SIZE, self.THUMB_SIZE))
+                    im.save(dst, "JPEG", quality=78, optimize=True, progressive=True)
+            self.copied_media.add(key)
+        return f"{root}media/{key}"
+
+    def thumb_url(self, rel: str | None, root: str) -> str | None:
+        return self.media_url(rel, root, "thumb")
 
     def photos(self, p: dict) -> list[dict]:
-        return [m for m in p["media"] if m["type"] == "photo"]
+        return [m for m in p["media"] if m["type"] == "photo" and m.get("src")]
+
+    def photo_ref(self, ref: str | None, root: str) -> str | None:
+        """'233:0' -> превью первой фотографии записи № 233."""
+        if not ref:
+            return None
+        pid, _, idx = ref.partition(":")
+        p = self.by_id.get(int(pid))
+        if not p:
+            return None
+        ph = self.photos(p)
+        i = int(idx or 0)
+        return self.thumb_url(ph[i]["src"], root) if i < len(ph) else None
+
+    def prune_media(self) -> int:
+        removed = 0
+        for sub in ("photos", "thumbs"):
+            d = self.out / "media" / sub
+            if d.is_dir():
+                for f in d.iterdir():
+                    if f"{sub}/{f.name}" not in self.copied_media:
+                        f.unlink()
+                        removed += 1
+        return removed
 
 
 CHANNEL = "e_jopov"
@@ -268,14 +308,15 @@ RARE_RE = re.compile(r"(Редк\w+ (фото|кадр|рисун|карикат
 
 def collect_prizes(arch: Archive, exclude=()) -> list[dict]:
     return [p for p in arch.posts
-            if PRIZE_RE.search(p["text"][:180]) and len(p["text"]) > 120 and p["id"] not in exclude]
+            if PRIZE_RE.search(p["text"][:180]) and len(p["text"]) > 120
+            and p["id"] not in exclude and not p.get("forwarded_from")]
 
 
 def collect_questions(arch: Archive, exclude=()) -> list[dict]:
     res = []
     for p in arch.posts:
         head = p["text"][:220]
-        if p["id"] in exclude:
+        if p["id"] in exclude or p.get("forwarded_from"):
             continue
         if QUESTION_RE.search(head) and "?" in head and len(p["text"]) > 150:
             res.append(p)
@@ -373,6 +414,19 @@ def build(args) -> None:
         "months": len(arch.months),
     }
 
+    # портрет Мэтра
+    portrait_src = args.export_dir / canon["site"].get("portrait", "photos/Zhopov_portrait.jpg")
+    if portrait_src.is_file():
+        (out / "media").mkdir(parents=True, exist_ok=True)
+        shutil.copy2(portrait_src, out / "media" / "portrait.jpg")
+        env.globals["portrait"] = "media/portrait.jpg"
+    else:
+        env.globals["portrait"] = None
+
+    zhensonessa = sorted((p for p in arch.posts if p.get("forwarded_from") == "Женсонесса Рысь"),
+                         key=lambda p: p["date"])
+    stats["zhensonessa"] = len(zhensonessa)
+
     render("index.html", "index.html", stats=stats, volumes=volumes, have_photos=have_photos,
            random_ids=[arch.post_href(p["id"]) for p in arch.posts if len(p["text"]) > 300])
     render("zhizn.html", "zhizn.html", timeline=canon["timeline"])
@@ -383,6 +437,8 @@ def build(args) -> None:
     render("svidetelstva.html", "svidetelstva.html",
            items=[{**w, "p": arch.by_id[w["post"]]} for w in canon["witnesses"]])
     render("lyudi.html", "lyudi.html", groups=people_groups)
+    render("zhensonessa.html", "feed.html", title="Записки Женсонессы Рысь", intro_key="zhensonessa",
+           posts=zhensonessa, kicker="Окружение · мемуары", page="lyudi.html")
     render("zavety.html", "zavety.html", sayings=canon["sayings"],
            posts=[arch.by_id[i] for i in canon["zavety"]["posts"]])
     render("premiya.html", "feed.html", title="Премия имени Эдуарда Жопова", intro_key="premiya",
@@ -400,6 +456,8 @@ def build(args) -> None:
     render("404.html", "prose.html", title="Документ не найден", key="not_found", stats=stats,
            base_href=canon["site"].get("base_path"))
 
+    pruned = arch.prune_media()
+
     static = TOOLS / "static"
     for f in static.iterdir():
         shutil.copy2(f, out / f.name)
@@ -407,7 +465,8 @@ def build(args) -> None:
 
     print(f"Собрано в {out}: {sum(1 for _ in out.rglob('*.html'))} страниц, "
           f"рассказов {len(all_stories)}, премия {len(prizes)}, вопросы {len(questions)}, "
-          f"фото-записей {len(photo_posts)} (редких {len(rare)}), медиа скопировано {len(arch.copied_media)}"
+          f"фото-записей {len(photo_posts)} (редких {len(rare)}), медиафайлов {len(arch.copied_media)}"
+          f"{f', удалено устаревших {pruned}' if pruned else ''}"
           + ("" if have_photos else " — папки photos/ нет, фото показаны описью"))
 
 

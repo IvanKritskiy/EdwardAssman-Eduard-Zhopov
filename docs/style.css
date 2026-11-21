@@ -336,3 +336,22 @@ a.ref:hover, .b-src a:hover, .t-src a:hover { color: var(--accent); border-color
   .site-head, .site-foot, .random-doc, .pager, .doc-foot .orig { display: none; }
   body { background: #fff; color: #000; }
 }
+
+/* ---------- photos, portrait, forwards */
+.oval.has-img { overflow: hidden; background: var(--paper-3); }
+.hero-portrait .stamp { background: var(--paper); mix-blend-mode: normal; opacity: .93; right: 2%; bottom: 20%; }
+.photo-card .doc-photos .ph img { aspect-ratio: 4 / 3; object-fit: cover; }
+.photo-card .doc-photos.n1 .ph img { max-height: none; }
+.oval.has-img img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 30%; filter: sepia(.18) contrast(1.02); }
+.doc-fwd { color: var(--ink-2); }
+.contact-sheet { list-style: none; margin: 0 0 22px; padding: 0; display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); }
+.contact-sheet a { display: block; text-decoration: none; color: var(--ink-3); }
+.contact-sheet img, .contact-sheet .ph-missing { width: 100%; aspect-ratio: 1; object-fit: cover; border: 1px solid var(--rule); background: var(--paper-3); min-height: 0; }
+.contact-sheet a:hover img { border-color: var(--accent); }
+.cs-meta { display: block; font: 11.5px/1.5 var(--mono); margin-top: 3px; }
+.person { display: flow-root; }
+.person-photo { float: left; margin: 4px 18px 6px 0; width: 96px; height: 120px; object-fit: cover; border-radius: 48px / 60px; border: 1px solid var(--rule); filter: sepia(.15); }
+.person-link a { font: 13px/1.5 var(--mono); text-decoration: none; }
+@media (max-width: 520px) {
+  .person-photo { width: 72px; height: 90px; margin-right: 14px; }
+}

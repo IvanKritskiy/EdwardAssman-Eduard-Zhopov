@@ -9,10 +9,13 @@
     <h2 class="sec-title">{{ group }}</h2>
     <div class="people">
       {% for person in people %}
-      <article class="person">
+      <article class="person{% if person.photo %} with-photo{% endif %}">
+        {% set ph = arch.photo_ref(person.photo, root) %}
+        {% if ph %}<img class="person-photo" src="{{ ph }}" alt="{{ person.name }}" loading="lazy">{% endif %}
         <h3>{{ person.name }}</h3>
         <p class="role">{{ person.role }}</p>
         <p>{{ person.text }}</p>
+        {% if person.link %}<p class="person-link"><a href="{{ root }}{{ person.link }}">{{ person.link_label }} →</a></p>{% endif %}
         <p class="b-src">Документы: {% for pid in person.posts %}<a href="{{ href(pid) }}">№&nbsp;{{ pid }}</a>{% if not loop.last %}, {% endif %}{% endfor %}</p>
       </article>
       {% endfor %}

@@ -203,7 +203,9 @@ def parse_message(div: Tag, page: str) -> dict | None:
     from_div = body.find("div", class_="from_name", recursive=False)
     signature = body.find("div", class_="signature", recursive=False)
     reply = body.find("div", class_="reply_to", recursive=False)
-    fwd = body.find("div", class_="forwarded", recursive=False)
+    # у пересланной записи два блока с классом forwarded: аватарка и тело; нужно тело
+    fwd = body.find(lambda t: t.name == "div" and {"forwarded", "body"} <= set(t.get("class") or []),
+                    recursive=False)
 
     content_scope = fwd if fwd is not None else body
     text_div = content_scope.find("div", class_="text", recursive=False)

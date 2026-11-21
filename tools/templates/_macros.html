@@ -3,9 +3,9 @@
 {% if ph %}
 <div class="doc-photos n{{ [ph|length, 4]|min }}">
   {% for m in ph %}
-  {% set thumb = arch.media_url(m.thumb, root) %}{% set full = arch.media_url(m.src, root) %}
-  {% if thumb or full %}
-  <a class="ph" href="{{ full or thumb }}"><img src="{{ thumb or full }}" loading="lazy" alt="Фотография к записи № {{ p.id }}"{% if m.w %} width="{{ m.w }}" height="{{ m.h }}"{% endif %}></a>
+  {% set full = arch.media_url(m.src, root) %}
+  {% if full %}
+  <a class="ph" href="{{ full }}"><img src="{{ full if ph|length == 1 else arch.thumb_url(m.src, root) }}" loading="lazy" decoding="async" alt="Фотография к записи № {{ p.id }}"{% if m.w %} width="{{ m.w }}" height="{{ m.h }}"{% endif %}></a>
   {% else %}
   <div class="ph ph-missing"{% if m.w and m.h %} style="aspect-ratio: {{ m.w }} / {{ m.h }}"{% endif %}><span>Фотография<br>не оцифрована</span></div>
   {% endif %}
@@ -32,6 +32,7 @@
   <a class="doc-no" href="{{ arch.post_href(p.id, root) }}">Ед. хр. № {{ p.id }}</a>
   <time datetime="{{ p.date }}">{{ p.date|date }}</time>
   {% if p.reply_to %}<a class="doc-reply" href="{{ arch.post_href(p.reply_to, root) }}">к № {{ p.reply_to }}</a>{% endif %}
+  {% if p.forwarded_from %}<span class="doc-fwd">переслано из «{{ p.forwarded_from }}»</span>{% endif %}
   {% if label %}<span class="doc-label">{{ label }}</span>{% endif %}
 </header>
 {% endmacro %}
