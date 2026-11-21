@@ -18,7 +18,7 @@
 
 ### Как посмотреть
 
-Откройте `docs/index.html` в браузере или включите GitHub Pages: Settings → Pages → Deploy from a branch → ветка с сайтом, папка `/docs`.
+Откройте https://ivankritskiy.github.io/EdwardAssman-Eduard-Zhopov/index.html
 
 ### Как пересобрать
 
