@@ -1,0 +1,63 @@
+{% macro media(p, root) %}
+{% set ph = p.media|selectattr('type', 'equalto', 'photo')|list %}
+{% if ph %}
+<div class="doc-photos n{{ [ph|length, 4]|min }}">
+  {% for m in ph %}
+  {% set thumb = arch.media_url(m.thumb, root) %}{% set full = arch.media_url(m.src, root) %}
+  {% if thumb or full %}
+  <a class="ph" href="{{ full or thumb }}"><img src="{{ thumb or full }}" loading="lazy" alt="Фотография к записи № {{ p.id }}"{% if m.w %} width="{{ m.w }}" height="{{ m.h }}"{% endif %}></a>
+  {% else %}
+  <div class="ph ph-missing"{% if m.w and m.h %} style="aspect-ratio: {{ m.w }} / {{ m.h }}"{% endif %}><span>Фотография<br>не оцифрована</span></div>
+  {% endif %}
+  {% endfor %}
+</div>
+{% endif %}
+{% for m in p.media if m.type != 'photo' %}
+<p class="doc-attach">{{ {'video': 'Видеозапись', 'animation': 'Анимация', 'audio_file': 'Аудиозапись', 'audio': 'Аудиозапись', 'voice': 'Голосовое сообщение', 'round_video': 'Видеосообщение', 'sticker': 'Стикер'}.get(m.type, 'Вложение') }}{% if m.title %}: {{ m.title }}{% endif %}{% if m.duration %} · {{ m.duration }}{% endif %} · <a href="https://t.me/{{ CHANNEL }}/{{ p.id }}" rel="noopener">смотреть в оригинале</a></p>
+{% endfor %}
+{% endmacro %}
+
+{% macro poll(p) %}
+{% if p.poll %}
+<div class="doc-poll">
+  <p class="poll-q">{{ p.poll.question }}</p>
+  <ul>{% for a in p.poll.answers %}<li><span>{{ a.text }}</span> <span class="poll-v">{{ a.votes }}</span></li>{% endfor %}</ul>
+  {% if p.poll.total %}<p class="poll-t">{{ p.poll.total }}</p>{% endif %}
+</div>
+{% endif %}
+{% endmacro %}
+
+{% macro meta(p, root, label=None) %}
+<header class="doc-meta">
+  <a class="doc-no" href="{{ arch.post_href(p.id, root) }}">Ед. хр. № {{ p.id }}</a>
+  <time datetime="{{ p.date }}">{{ p.date|date }}</time>
+  {% if p.reply_to %}<a class="doc-reply" href="{{ arch.post_href(p.reply_to, root) }}">к № {{ p.reply_to }}</a>{% endif %}
+  {% if label %}<span class="doc-label">{{ label }}</span>{% endif %}
+</header>
+{% endmacro %}
+
+{% macro foot(p) %}
+<footer class="doc-foot">
+  {% if p.reactions %}<span class="reactions" title="Отклики читателей">{% for r in p.reactions %}<span>{{ r.emoji }}&#8239;{{ r.count }}</span>{% endfor %}</span>{% endif %}
+  <a class="orig" href="https://t.me/{{ CHANNEL }}/{{ p.id }}" rel="noopener">оригинал в Telegram ↗</a>
+</footer>
+{% endmacro %}
+
+{% macro doc(p, root, heading=None, label=None, anchor=True) %}
+<article class="doc"{% if anchor %} id="z{{ p.id }}"{% endif %}>
+  {{ meta(p, root, label) }}
+  {% if heading %}<h3 class="doc-title">{{ heading }}</h3>{% endif %}
+  {{ media(p, root) }}
+  {% if p.html_clean %}<div class="doc-text">{{ paragraphs(p.html_clean, 'verse')|safe }}</div>{% endif %}
+  {{ poll(p) }}
+  {{ foot(p) }}
+</article>
+{% endmacro %}
+
+{% macro pagehead(kicker, title, lead=None) %}
+<section class="page-head wrap">
+  {% if kicker %}<p class="kicker">{{ kicker }}</p>{% endif %}
+  <h1>{{ title }}</h1>
+  {% if lead %}<div class="lead">{{ lead|safe }}</div>{% endif %}
+</section>
+{% endmacro %}

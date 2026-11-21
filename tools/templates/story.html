@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}{{ s.title }} · {{ s.author }}{% endblock %}
+{% block description %}{{ s.author }}. «{{ s.title }}»{% if s.year %}, {{ s.year }}{% endif %}. {{ s.volume }}.{% endblock %}
+{% block bodyclass %}reading{% endblock %}
+{% block main %}
+<article class="story wrap-narrow">
+  <p class="kicker"><a href="{{ root }}sochineniya.html">Собрание сочинений</a> · {{ s.volume }}</p>
+  <p class="story-author">{{ s.author }}</p>
+  <h1 class="story-title">{{ s.title }}</h1>
+  <p class="story-year">{{ s.year ~ ' г.' if s.year else 'Год не установлен' }}</p>
+  {% if s.preface_html %}
+  <aside class="publisher-note"><span class="kicker">От публикаторов</span> {{ s.preface_html|safe }}</aside>
+  {% endif %}
+  <div class="story-body">{{ s.body_html|safe }}</div>
+  <footer class="story-foot">
+    <p>Опубликовано {{ s.post.date|date }}. <a href="{{ href(s.id) }}">Ед. хр. № {{ s.id }}</a> · <a href="https://t.me/{{ CHANNEL }}/{{ s.id }}" rel="noopener">оригинал в Telegram ↗</a></p>
+    <nav class="pager">
+      {% if s.prev %}<a class="prev" href="{{ s.prev.id }}.html">← {{ s.prev.title }}</a>{% else %}<span></span>{% endif %}
+      {% if s.next %}<a class="next" href="{{ s.next.id }}.html">{{ s.next.title }} →</a>{% endif %}
+    </nav>
+  </footer>
+</article>
+{% endblock %}

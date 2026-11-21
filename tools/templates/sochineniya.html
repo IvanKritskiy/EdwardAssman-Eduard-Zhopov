@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% from "_macros.html" import pagehead %}
+{% block title %}Собрание сочинений · {{ site.title }}{% endblock %}
+{% block main %}
+{{ pagehead('Раздел II', 'Собрание сочинений', md('sochineniya_lead')) }}
+<div class="wrap">
+  {% for v in volumes %}
+  <section class="volume{% if v.appendix %} appendix{% endif %}">
+    <header class="vol-head">
+      <h2>{{ v.title }}</h2>
+      <span class="vol-years">{{ v.years }}</span>
+    </header>
+    <p class="vol-note">{{ v.note }}</p>
+    <ol class="contents">
+      {% for s in v.stories %}
+      <li><a href="tekst/{{ s.id }}.html"><span class="c-title">{{ s.title }}</span><span class="c-dots"></span><span class="c-year">{{ s.year or 'б. г.' }}</span></a></li>
+      {% endfor %}
+    </ol>
+  </section>
+  {% endfor %}
+
+  <section class="biblio" id="bibliografiya">
+    <h2 class="sec-title">Библиография</h2>
+    <div class="prose">{{ md('biblio_lead')|safe }}</div>
+    <ul class="books">
+      {% for b in books %}
+      <li>
+        <p class="b-title">«{{ b.title }}»</p>
+        <p class="b-kind">{{ b.kind }}{% if b.year %}, {{ b.year }}{% endif %}</p>
+        {% if b.note %}<p class="b-note">{{ b.note }}</p>{% endif %}
+        <p class="b-src">Упоминания: {% for pid in b.posts %}<a href="{{ href(pid) }}">№&nbsp;{{ pid }}</a>{% if not loop.last %}, {% endif %}{% endfor %}</p>
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+</div>
+{% endblock %}

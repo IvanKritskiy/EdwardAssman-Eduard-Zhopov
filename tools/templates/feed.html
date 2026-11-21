@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% from "_macros.html" import pagehead, doc %}
+{% block title %}{{ title }} · {{ site.title }}{% endblock %}
+{% block main %}
+{{ pagehead(kicker, title, md(intro_key)) }}
+<div class="wrap-narrow feed">
+  <p class="count">Документов в подборке: {{ posts|length }}</p>
+  {% for p in posts %}{{ doc(p, root) }}{% endfor %}
+</div>
+{% endblock %}

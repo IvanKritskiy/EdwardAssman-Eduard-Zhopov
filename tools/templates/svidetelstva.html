@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% from "_macros.html" import pagehead, doc %}
+{% block title %}Свидетельства современников · {{ site.title }}{% endblock %}
+{% block main %}
+{{ pagehead('Раздел IV', 'Свидетельства современников', md('svidetelstva_lead')) }}
+<div class="wrap">
+  <nav class="name-index" aria-label="Указатель свидетелей">
+    {% for w in items %}<a href="#z{{ w.post }}">{{ w.who }}</a>{% endfor %}
+  </nav>
+  <div class="witnesses">
+    {% for w in items %}
+    {{ doc(w.p, root, heading=w.who) }}
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% from "_macros.html" import pagehead %}
+{% block title %}Окружение · {{ site.title }}{% endblock %}
+{% block main %}
+{{ pagehead('Раздел V', 'Окружение', md('lyudi_lead')) }}
+<div class="wrap">
+  {% for group, people in groups.items() %}
+  <section class="people-group">
+    <h2 class="sec-title">{{ group }}</h2>
+    <div class="people">
+      {% for person in people %}
+      <article class="person">
+        <h3>{{ person.name }}</h3>
+        <p class="role">{{ person.role }}</p>
+        <p>{{ person.text }}</p>
+        <p class="b-src">Документы: {% for pid in person.posts %}<a href="{{ href(pid) }}">№&nbsp;{{ pid }}</a>{% if not loop.last %}, {% endif %}{% endfor %}</p>
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+  {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% from "_macros.html" import pagehead %}
+{% block title %}Жизнеописание · {{ site.title }}{% endblock %}
+{% block main %}
+{{ pagehead('Раздел I', 'Жизнеописание', md('zhizn_lead')) }}
+<div class="wrap two-col">
+  <article class="prose bio">{{ md('zhizn')|safe }}</article>
+  <aside class="toc-side">
+    <p class="kicker">Хронология</p>
+    <ol class="timeline">
+      {% for t in timeline %}
+      <li>
+        <span class="t-when">{{ t.when }}</span>
+        <span class="t-what">{{ t.text }}</span>
+        <span class="t-src">{% for pid in t.posts %}<a href="{{ href(pid) }}">№&nbsp;{{ pid }}</a>{% if not loop.last %}, {% endif %}{% endfor %}</span>
+      </li>
+      {% endfor %}
+    </ol>
+  </aside>
+</div>
+{% endblock %}
