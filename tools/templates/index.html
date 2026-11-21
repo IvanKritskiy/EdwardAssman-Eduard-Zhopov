@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% from "_macros.html" import doc %}
+{% block bodyclass %}home{% endblock %}
+{% block main %}
+<section class="hero wrap">
+  <div class="hero-text">
+    <p class="kicker">Э. Б. Жопов · 1901 — ?</p>
+    <h1>Эдуард Борисович Жопов</h1>
+    <p class="hero-sub">Прозаик, поэт поневоле, председатель Союза писателей СССР (1963, недолго), автор тысячи романов</p>
+    <figure class="epigraph">
+      <blockquote>{{ site.epigraph }}</blockquote>
+      <figcaption>{{ site.epigraph_by }} · <a href="{{ href(site.epigraph_post) }}">ед. хр. № {{ site.epigraph_post }}</a></figcaption>
+    </figure>
+  </div>
+  <div class="hero-portrait" aria-hidden="true">
+    <div class="oval"><span>Э.&thinsp;Б.&thinsp;Ж.</span></div>
+    <p class="portrait-cap">Портрет не сохранился. Расставаясь с жёнами, Мэтр сжигал фотографии</p>
+    <span class="stamp">Хранить вечно</span>
+  </div>
+</section>
+
+<section class="wrap intro-grid">
+  <div class="intro prose">{{ md('home_intro')|safe }}</div>
+  <dl class="stats">
+    <div><dt>записей в архиве</dt><dd>{{ stats.posts }}</dd></div>
+    <div><dt>текстов Мэтра</dt><dd>{{ stats.stories }}</dd></div>
+    <div><dt>фотографий</dt><dd>{{ stats.photos }}</dd></div>
+    <div><dt>романов, по словам автора</dt><dd>1000</dd></div>
+  </dl>
+</section>
+
+<section class="wrap sections">
+  <h2 class="sec-title">Разделы собрания</h2>
+  <div class="cards">
+    <a class="card" href="zhizn.html"><span class="card-no">I</span><h3>Жизнеописание</h3><p>Биография по документам и хронология жизни. Начинается в доме призреваемых в Пятигорске, заканчивается у фонарного столба на Ваганьковском.</p></a>
+    <a class="card" href="sochineniya.html"><span class="card-no">II</span><h3>Собрание сочинений</h3><p>Рассказы, найденные в архивах, по томам и годам. Библиография романов. Приложение: проза Ягодичкина.</p></a>
+    <a class="card" href="stihi.html"><span class="card-no">III</span><h3>Стихотворения и песни</h3><p>Стихи Мэтра, которые он сам считал неудачными, посвящения ему и песни его круга.</p></a>
+    <a class="card" href="svidetelstva.html"><span class="card-no">IV</span><h3>Свидетельства современников</h3><p>Булгаков, Троцкий, Камю, Беккет, Хемингуэй, Довлатов и ещё четыре десятка человек, знавших Мэтра.</p></a>
+    <a class="card" href="lyudi.html"><span class="card-no">V</span><h3>Окружение</h3><p>Музы, жёны, друзья, издатель, оппонент Ягодичкин и критик Алла Красивая.</p></a>
+    <a class="card" href="zavety.html"><span class="card-no">VI</span><h3>Заветы</h3><p>Распорядок дня 1967 года, правила жизни, советы начинающим и крылатые слова.</p></a>
+    <a class="card" href="premiya.html"><span class="card-no">VII</span><h3>Премия имени Жопова</h3><p>«Жоповка» вручается ежедневно, в основном в Монте-Карло. Хроника вручений.</p></a>
+    <a class="card" href="foto.html"><span class="card-no">VIII</span><h3>Фотоархив</h3><p>Опись фотодокументов: редкие кадры, рисунки и карикатуры.</p></a>
+    <a class="card" href="letopis/index.html"><span class="card-no">IX</span><h3>Летопись канала</h3><p>Все {{ stats.posts }} записей «Хранителей наследия» по месяцам, с декабря 2022 года.</p></a>
+  </div>
+</section>
+
+<section class="wrap random-doc">
+  <p>Не знаете, с чего начать?</p>
+  <button type="button" class="btn" data-random='{{ random_ids|tojson }}'>Открыть случайный документ</button>
+</section>
+{% endblock %}

@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% from "_macros.html" import pagehead %}
+{% block title %}{{ title }} · {{ site.title }}{% endblock %}
+{% block main %}
+{{ pagehead('', title) }}
+<div class="wrap-narrow prose">{{ md(key)|safe }}</div>
+{% endblock %}

@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% from "_macros.html" import pagehead %}
+{% block title %}Летопись канала · {{ site.title }}{% endblock %}
+{% block main %}
+{{ pagehead('Раздел IX', 'Летопись канала', md('letopis_lead')) }}
+<div class="wrap">
+  {% set ns = namespace(year='') %}
+  <div class="years">
+  {% for key, posts in months.items() %}
+    {% if key[:4] != ns.year %}{% if ns.year %}</ul></section>{% endif %}{% set ns.year = key[:4] %}<section class="year"><h2>{{ ns.year }}</h2><ul class="months">{% endif %}
+    <li><a href="{{ key }}.html"><span>{{ key|month_title|replace(' ' ~ ns.year, '') }}</span><span class="m-count">{{ posts|length }}</span></a></li>
+  {% endfor %}
+  </ul></section>
+  </div>
+</div>
+{% endblock %}

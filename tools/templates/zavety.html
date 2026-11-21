@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% from "_macros.html" import pagehead, doc %}
+{% block title %}Заветы · {{ site.title }}{% endblock %}
+{% block main %}
+{{ pagehead('Раздел VI', 'Заветы', md('zavety_lead')) }}
+<div class="wrap">
+  <section class="sayings">
+    {% for s in sayings %}
+    <figure class="saying">
+      <blockquote>{{ s.text }}</blockquote>
+      <figcaption>{{ s.who }} · <a href="{{ href(s.post) }}">№&nbsp;{{ s.post }}</a></figcaption>
+    </figure>
+    {% endfor %}
+  </section>
+  <h2 class="sec-title">Наставления целиком</h2>
+  <div class="wrap-narrow feed">
+    {% for p in posts %}{{ doc(p, root) }}{% endfor %}
+  </div>
+</div>
+{% endblock %}

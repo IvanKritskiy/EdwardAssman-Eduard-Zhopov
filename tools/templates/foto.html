@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% from "_macros.html" import pagehead, media %}
+{% block title %}Фотоархив · {{ site.title }}{% endblock %}
+{% block main %}
+{{ pagehead('Раздел VIII', 'Фотоархив', md('foto_lead')) }}
+<div class="wrap">
+  {% if not have_photos %}
+  <p class="notice">Фотографии пока не оцифрованы: в собрание поступили только тексты. Ниже опись: номер единицы хранения, дата и подпись. Изображения появятся на своих местах, когда в архив добавят папку <code>photos/</code> из экспорта канала.</p>
+  {% endif %}
+  <section>
+    <h2 class="sec-title">Редкие кадры</h2>
+    <div class="photo-grid">
+      {% for p in rare %}
+      <figure class="photo-card" id="f{{ p.id }}">
+        {{ media(p, root) }}
+        <figcaption><span class="doc-no">№ {{ p.id }} · {{ p.date|date }}</span> {{ first_sentence(p.text, 260) }} <a href="{{ arch.post_href(p.id, root) }}">документ</a></figcaption>
+      </figure>
+      {% endfor %}
+    </div>
+  </section>
+  <section>
+    <h2 class="sec-title">Полная опись</h2>
+    {% for year, posts in by_year.items() %}
+    <details class="inventory"{% if loop.first %} open{% endif %}>
+      <summary>{{ year }} год · {{ posts|length }} ед. хр.</summary>
+      <table>
+        <thead><tr><th>№</th><th>Дата</th><th>Фото</th><th>Подпись</th></tr></thead>
+        <tbody>
+        {% for p in posts %}
+        <tr><td><a href="{{ arch.post_href(p.id, root) }}">{{ p.id }}</a></td><td class="nowrap">{{ p.date|date }}</td><td>{{ arch.photos(p)|length }}</td><td>{{ first_sentence(p.text, 160) if p.text else '— без подписи —' }}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </details>
+    {% endfor %}
+  </section>
+</div>
+{% endblock %}

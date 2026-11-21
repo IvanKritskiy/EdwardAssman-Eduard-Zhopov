@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% from "_macros.html" import pagehead, meta, foot %}
+{% block title %}Стихотворения и песни · {{ site.title }}{% endblock %}
+{% block main %}
+{{ pagehead('Раздел III', 'Стихотворения и песни', md('stihi_lead')) }}
+<div class="wrap-narrow">
+  {% for name, poems in sections.items() %}
+  <section class="poem-section">
+    <h2 class="sec-title">{{ name }}</h2>
+    {% for poem in poems %}
+    <article class="doc poem">
+      {{ meta(poem.p, root) }}
+      <h3 class="poem-title">{{ poem.title }}</h3>
+      {% if poem.note %}<p class="poem-note">{{ poem.note }}</p>{% endif %}
+      <div class="doc-text verse">{{ paragraphs(poem.p.html_clean, 'verse')|safe }}</div>
+      {{ foot(poem.p) }}
+    </article>
+    {% endfor %}
+  </section>
+  {% endfor %}
+</div>
+{% endblock %}
