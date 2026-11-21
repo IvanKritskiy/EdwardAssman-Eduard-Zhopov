@@ -397,7 +397,8 @@ def build(args) -> None:
         render(f"letopis/{key}.html", "letopis_month.html", key=key, posts=arch.months[key],
                prev_key=keys[i - 1] if i else None, next_key=keys[i + 1] if i + 1 < len(keys) else None)
     render("o-sobranii.html", "prose.html", title="О собрании", key="o_sobranii", stats=stats)
-    render("404.html", "prose.html", title="Документ не найден", key="not_found", stats=stats)
+    render("404.html", "prose.html", title="Документ не найден", key="not_found", stats=stats,
+           base_href=canon["site"].get("base_path"))
 
     static = TOOLS / "static"
     for f in static.iterdir():
