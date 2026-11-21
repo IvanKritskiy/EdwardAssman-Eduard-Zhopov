@@ -39,7 +39,7 @@
 
 {% macro foot(p) %}
 <footer class="doc-foot">
-  {% if p.reactions %}<span class="reactions" title="Отклики читателей">{% for r in p.reactions %}<span>{{ r.emoji }}&#8239;{{ r.count }}</span>{% endfor %}</span>{% endif %}
+  <span></span>
   <a class="orig" href="https://t.me/{{ CHANNEL }}/{{ p.id }}" rel="noopener">оригинал в Telegram ↗</a>
 </footer>
 {% endmacro %}
