@@ -5,7 +5,7 @@
     python3 tools/build_site.py        # data/posts.json + content/ -> docs/
 
 Фотографии берутся из папки экспорта («Эдуард Жопов/photos/...»), если она есть.
-Требуются jinja2 и Pillow.
+Требуются jinja2, Pillow и beautifulsoup4.
 """
 from __future__ import annotations
 
@@ -22,6 +22,7 @@ from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from PIL import Image
+from bs4 import BeautifulSoup
 
 ROOT = Path(__file__).resolve().parent.parent
 TOOLS = Path(__file__).resolve().parent
@@ -36,6 +37,30 @@ PHONE_RE = re.compile(r"\+7[  (-]*\d{3}[  )-]*\d{3}[  -]*\d{2}[  -]*\d{2}")
 REDACTED = '<span class="redacted" title="Реквизиты для пожертвований в архив не включены">изъято</span>'
 DONATION_LINE_RE = re.compile(r"(Сбер|помо(чь|щь) проекту|Помощь проекту|можете оказать|донат|пожертвова)", re.I)
 TAG_RE = re.compile(r"<[^>]+>")
+# фразы о переводах денег; вырезаются только из записей, перечисленных в cleanup.strip
+DONATE_RE = re.compile(
+    r"(\bСбер\b|\+7[ (]*9\d\d|(?:\d{4}[ -]?){3}\d{4}|Помощь проекту|Поддержать проект|Благотворительность|Получатель"
+    r"|можете (оказать )?помо|помочь материально|Жертвовать|поддержать рубл|Реквизиты|за помощь|Благодарим (наших |дорогих )?подписчиков"
+    r"|\d+ тысяч\w* рублей на|часть денег|мини-тираж|скинув нам)", re.I)
+# признаки связи записи с Мэтром и его окружением (для пересланных записей)
+RELATED_RE = re.compile(
+    r"(Жопов|Мэтр|Глыб|Эдуард\w* Борисович|Женсонесс|Ягодичкин|Тошницк|Сосиписос|Кусь|Хабаровск|херес|64 тысяч"
+    r"|бомжар|ельцинск|ноги отчима|Мразь|Чернухин)", re.I)
+# подписи, которые без реквизитов теряют смысл; убираются из всех записей
+LABEL_ONLY_RE = re.compile(r"^\s*(Помощь проекту|Поддержать проект|Благотворительность|Получатель)\b\s*:?.{0,60}$", re.I)
+EMOJI_RE = re.compile(
+    "[\U0001F000-\U0001FAFF\u2600-\u27BF\u2B05-\u2B55\u23CF\u23E9-\u23FA\u2190-\u21FF"
+    "\uFE0F\u200D\u20E3\U000E0020-\U000E007F]+")
+
+
+def strip_emoji(s: str) -> str:
+    s = EMOJI_RE.sub("", s)
+    s = re.sub(r"[ \u00a0]+([!?.,:;)»])", r"\1", s)
+    s = re.sub(r"([«(])[ \u00a0]+", r"\1", s)
+    return re.sub(r"[ \u00a0]{2,}", " ", s)
+
+
+SENT_SPLIT = re.compile(r"(?<=[.!?…»)])\s+(?=[«(\-–—A-ZА-ЯЁ0-9])")
 
 
 # ------------------------------------------------------------------ helpers
@@ -155,9 +180,34 @@ def markdown(src: str, link) -> str:
 # ------------------------------------------------------------------ archive model
 
 class Archive:
-    def __init__(self, data: dict, export_dir: Path, out: Path):
+    def __init__(self, data: dict, export_dir: Path, out: Path, cleanup: dict | None = None):
+        cleanup = cleanup or {}
         self.channel = data.get("channel")
-        self.posts = [p for p in data["posts"] if p.get("date")]
+        exclude = set()
+        for key, ids in cleanup.items():
+            if key.startswith("exclude"):
+                exclude |= set(ids)
+        keep_fwd = set(cleanup.get("keep_forwards_from", []))
+        self.removed: list[dict] = []
+        posts = []
+        for p in data["posts"]:
+            if not p.get("date"):
+                continue
+            unrelated_fwd = (cleanup.get("drop_unrelated_forwards") and p.get("forwarded_from")
+                             and p["forwarded_from"] not in keep_fwd and not RELATED_RE.search(p["text"]))
+            blank = not p["text"].strip() and not p["media"] and not p.get("poll")
+            short_reply = (cleanup.get("drop_short_replies") and not p.get("forwarded_from") and not p["media"]
+                           and not p.get("poll") and len(p["text"].strip()) < 40 and not RELATED_RE.search(p["text"]))
+            if exclude & set(p["ids"]) or unrelated_fwd or blank or short_reply:
+                self.removed.append(p)
+            else:
+                posts.append(p)
+        self.posts = posts
+        self.strip_ids = set(cleanup.get("strip", []))
+        self.emoji_off = bool(cleanup.get("strip_emoji"))
+        self.keep_emoji = set(cleanup.get("keep_emoji", []))
+        self.strip_phrases = [re.escape(x) for x in cleanup.get("strip_phrases", [])]
+        self.strip_re = re.compile(DONATE_RE.pattern + ("|" + "|".join(self.strip_phrases) if self.strip_phrases else ""), re.I)
         self.by_id: dict[int, dict] = {}
         for p in self.posts:
             for i in p["ids"]:
@@ -169,8 +219,13 @@ class Archive:
             self.months.setdefault(month_key(p["date"]), []).append(p)
         self.copied_media: set[str] = set()
         for p in self.posts:
-            p["html_clean"] = self.clean_html(p["html"])
-            p["text"] = PHONE_RE.sub("[изъято]", CARD_RE.sub("[изъято]", p["text"]))
+            html = self.strip_donations(p["html"]) if self.strip_ids & set(p["ids"]) else p["html"]
+            p["html_clean"] = self.clean_html(html)
+            if self.emoji_off and not (self.keep_emoji & set(p["ids"])):
+                p["html_clean"] = strip_emoji(p["html_clean"]).strip()
+                if p.get("forwarded_from"):
+                    p["forwarded_from"] = strip_emoji(p["forwarded_from"]).strip()
+            p["text"] = "\n".join(strip_tags(ln).strip() for ln in html_lines(p["html_clean"])).strip()
 
     # -- links
     def post_href(self, pid: int, root: str = "") -> str:
@@ -179,7 +234,33 @@ class Archive:
             return f"https://t.me/{CHANNEL}/{pid}"
         return f"{root}letopis/{month_key(p['date'])}.html#z{p['id']}"
 
+    def strip_donations(self, html: str) -> str:
+        """Убирает фразы о переводах денег и строки с реквизитами, остальной текст не трогает."""
+        kept = []
+        for ln in html_lines(html):
+            plain = strip_tags(ln)
+            if not self.strip_re.search(plain):
+                kept.append(ln)
+                continue
+            if len(plain) < 220:  # короткая строка с просьбой уходит целиком, без обрывков
+                continue
+            parts = [s for s in SENT_SPLIT.split(ln.strip()) if not self.strip_re.search(strip_tags(s))]
+            if parts:
+                kept.append(" ".join(parts))
+        out = "<br>".join(kept)
+        out = re.sub(r"(<br>\s*){3,}", "<br><br>", out)
+        return re.sub(r"^(\s*<br>)+|(<br>\s*)+$", "", out)
+
     def clean_html(self, html: str) -> str:
+        # строки с реквизитами убираются целиком, остатки на всякий случай скрываются
+        def keep(ln: str) -> bool:
+            t = strip_tags(ln)
+            return not (CARD_RE.search(t) or PHONE_RE.search(t) or LABEL_ONLY_RE.match(t))
+        html = "<br>".join(ln for ln in html_lines(html) if keep(ln))
+        html = re.sub(r"(<br>\s*){3,}", "<br><br>", html)
+        html = re.sub(r"^(\s*<br>)+|(<br>\s*)+$", "", html.strip())
+        # после вырезания строк закрываем оборванные теги
+        html = str(BeautifulSoup(html, "html.parser")).replace("<br/>", "<br>")
         html = redact(html)
         # ссылки на записи канала ведут внутрь архива
         def tme(m):
@@ -344,7 +425,7 @@ def build(args) -> None:
             shutil.rmtree(child) if child.is_dir() else child.unlink()
     out.mkdir(parents=True, exist_ok=True)
 
-    arch = Archive(data, args.export_dir, out)
+    arch = Archive(data, args.export_dir, out, canon.get("cleanup"))
 
     env = Environment(loader=FileSystemLoader(TOOLS / "templates"),
                       autoescape=select_autoescape(["html"]), trim_blocks=True, lstrip_blocks=True)
@@ -467,6 +548,7 @@ def build(args) -> None:
           f"рассказов {len(all_stories)}, премия {len(prizes)}, вопросы {len(questions)}, "
           f"фото-записей {len(photo_posts)} (редких {len(rare)}), медиафайлов {len(arch.copied_media)}"
           f"{f', удалено устаревших {pruned}' if pruned else ''}"
+          f"; исключено записей: {len(arch.removed)}"
           + ("" if have_photos else " — папки photos/ нет, фото показаны описью"))
 
 
